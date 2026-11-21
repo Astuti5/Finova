@@ -1,0 +1,1 @@
+export default function Loans() { return <div><h1 className="text-2xl font-bold text-white">Loans</h1><p className="mt-2 text-slate-400">Loan requests and repayment schedules are next on the roadmap (tables and RLS already exist in the migration). Loans here are records only, not funded money.</p></div>; }

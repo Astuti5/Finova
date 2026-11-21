@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0-synthetic",
+  "data": "synthetic only",
+  "credit": {
+    "logreg": {
+      "roc_auc": 0.6844,
+      "brier": 0.165
+    },
+    "gradient_boosting": {
+      "roc_auc": 0.6395,
+      "brier": 0.1723
+    },
+    "served_model": "logreg (linear, explainable)",
+    "default_rate": 0.2363
+  },
+  "anomaly": {
+    "false_positive_rate": 0.026,
+    "injected_detection_rate": 1.0,
+    "note": "synthetic injected anomalies"
+  },
+  "nlp": {
+    "heldout_accuracy": 1.0,
+    "heldout_n": 10,
+    "note": "tiny hand-written set"
+  }
+}
