@@ -34,8 +34,7 @@ Finova is a web-based community savings and loans platform designed to help grou
 
 The project explores how secure web development, database-backed workflows, and tamper-evident records can support more transparent community finance.
 
-url link:- https://vercel.com/astutis-projects-113521c7/finova/3XygbzA2oUAAPzNmP2FmAXnSg56C
-
+url link:- https://finova-rust.vercel.app/
 ### 🎯 Core Objectives
 
 - Simplify community savings management.
