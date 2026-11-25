@@ -9,13 +9,14 @@ export default function Circles() {
   const load = async () => {
     const [c, m, r] = await Promise.all([supabase.from("savings_circles").select("id,name,contribution_paise,invite_code,invite_expires_at"),
       supabase.from("circle_members").select("circle_id").eq("user_id", uid).eq("role", "admin"), supabase.from("join_requests").select("circle_id,user_id,label,status").eq("status", "pending")]);
+    if (c.error || m.error || r.error) setMsg("Could not load circles (code " + (c.error?.code ?? m.error?.code ?? r.error?.code) + "). Check that all migrations ran in Supabase.");
     setList((c.data as Circle[]) ?? []); setAdmin(new Set((m.data ?? []).map(x => x.circle_id))); setReqs((r.data as Req[]) ?? []); };
   useEffect(() => { load(); }, []);
   const run = async (fn: string, args: object, ok: string, bad: string) => { const { error } = await supabase.rpc(fn, args); setMsg(error ? bad : ok); load(); };
   function create(e: FormEvent) { e.preventDefault(); const p = circleSchema.safeParse({ name, contribution_rupees: amt }); if (!p.success) return setMsg(p.error.issues[0].message);
     run("create_circle", { p_name: p.data.name, p_contribution_paise: toPaise(p.data.contribution_rupees) }, "Circle created.", "Could not create circle."); }
   function join(e: FormEvent) { e.preventDefault(); const p = inviteSchema.safeParse(code.toUpperCase()); if (!p.success) return setMsg(p.error.issues[0].message);
-    run("join_circle", { p_code: p.data }, "Request sent. An admin must approve it.", "Invalid, expired or revoked code (or too many attempts)."); }
+    supabase.rpc("join_circle", { p_code: p.data }).then(({ data, error }) => { setMsg(error ? "Too many attempts. Try again later." : data ? "Request sent. An admin must approve it." : "Invalid, expired or revoked code."); load(); }); }
   return (<div className="space-y-6"><h1 className="text-2xl font-bold text-white">Savings circles</h1>{msg && <p role="status" className="text-cyan text-sm">{msg}</p>}
     <div className="grid gap-4 md:grid-cols-2">
       <form onSubmit={create} className="card p-4 space-y-3"><h2 className="font-semibold text-white">Create a circle</h2>

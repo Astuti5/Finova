@@ -9,7 +9,7 @@ export default function Dashboard() {
     const [a, b, d] = await Promise.all([
       supabase.from("contributions").select("id,amount_paise,status,created_at").eq("user_id", uid).order("created_at", { ascending: false }).limit(200),
       supabase.from("circle_members").select("circle_id", { count: "exact", head: true }).eq("user_id", uid),
-      supabase.from("loans").select("amount_paise").in("status", ["pending", "approved"])]);
+      supabase.from("loans").select("amount_paise").eq("user_id", uid).in("status", ["pending", "approved"])]);
     if (a.error || b.error || d.error) return setErr("Could not load your data.");
     setC(a.data as C[]); setCircles(b.count ?? 0); setLoans((d.data ?? []).reduce((s, l) => s + l.amount_paise, 0));
   })(); }, []);

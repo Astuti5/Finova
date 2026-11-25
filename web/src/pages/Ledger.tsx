@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"; import { Boxes, ShieldCheck, ShieldAlert, Search, Network } from "lucide-react";
 import { supabase } from "../services/supabase"; import { inr } from "../utils/schemas"; import WalletButton from "../components/WalletButton";
 type A = { seq: number; tx_hash: string; block_number: number; created_at: string };
-type R = { id: string; seq: number; record_hash: string; prev_hash: string; payload: { amount_paise: number; payment_ref: string; cycle: number; method: string }; created_at: string; tx_hash: string | null };
+type R = { id: string; seq: number; record_hash: string; prev_hash: string; payload: { amount_paise: number; payment_ref: string; cycle: number; method: string; kind?: string; installment_no?: number }; created_at: string; tx_hash: string | null };
 const short = (h: string) => `${h.slice(0, 10)}…${h.slice(-8)}`;
 export default function Ledger() {
   const [circles, setCircles] = useState<{ id: string; name: string }[]>([]); const [cid, setCid] = useState(""); const [recs, setRecs] = useState<R[]>([]); const [q, setQ] = useState("");
@@ -27,9 +27,10 @@ export default function Ledger() {
       {shown.map(r => <div key={r.id} className="border-t border-line p-4 text-sm grid gap-1 md:grid-cols-[6rem_1fr_auto] md:items-center">
         <span className="font-mono text-cyan">#{r.seq}</span>
         <div className="min-w-0"><p className="font-mono truncate" title={r.record_hash}>Hash {short(r.record_hash)}</p><p className="font-mono text-xs text-slate-500 truncate" title={r.prev_hash}>Prev {short(r.prev_hash)}</p>
-          <p className="text-xs text-slate-400">{r.payload.payment_ref} · cycle {r.payload.cycle} · {new Date(r.created_at).toLocaleString("en-IN")}</p></div>
+          <p className="text-xs text-slate-400">{r.payload.payment_ref} · {r.payload.kind === "repayment" ? `repayment #${r.payload.installment_no}` : `cycle ${r.payload.cycle}`} · {new Date(r.created_at).toLocaleString("en-IN")}</p></div>
         <div className="md:text-right"><p className="font-semibold text-white">{inr(r.payload.amount_paise)}</p>{(() => { const f = anchors.filter(a => a.seq >= r.seq); const cp = f[f.length - 1]; return cp ? <p className="text-xs text-ok">Covered by Sepolia checkpoint #{cp.seq}</p> : <p className="text-xs text-warn">Simulated · not anchored on-chain</p>; })()}</div></div>)}</section>
     <section className="card"><h2 className="font-semibold text-white p-4">On-chain checkpoints (Sepolia testnet)</h2>{anchors.length === 0 && <p className="px-4 pb-4 text-sm text-slate-400">None yet. Only the latest chain hash is published, never member or payment details.</p>}
       {anchors.map(a => <div key={a.tx_hash} className="border-t border-line p-4 text-sm flex flex-wrap gap-x-4 gap-y-1"><span className="font-mono text-cyan">Entry #{a.seq}</span><span>Block {a.block_number}</span>
         <a className="font-mono text-violet underline" target="_blank" rel="noopener noreferrer" href={`https://sepolia.etherscan.io/tx/${a.tx_hash}`}>Tx {short(a.tx_hash)}</a></div>)}</section></div>);
 }
+
