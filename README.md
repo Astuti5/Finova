@@ -24,6 +24,8 @@ A community-focused platform designed to simplify savings circles, manage contri
   </a>
 </p>
 
+**🌐 Live Application:** [finova-rust.vercel.app](https://finova-rust.vercel.app/)
+
 </div>
 
 ---
@@ -34,7 +36,6 @@ Finova is a web-based community savings and loans platform designed to help grou
 
 The project explores how secure web development, database-backed workflows, and tamper-evident records can support more transparent community finance.
 
-url link:- https://finova-rust.vercel.app/
 ### 🎯 Core Objectives
 
 - Simplify community savings management.
@@ -42,6 +43,7 @@ url link:- https://finova-rust.vercel.app/
 - Support controlled membership and invitations.
 - Maintain verifiable financial activity records.
 - Explore blockchain-based ledger anchoring.
+- Introduce explainable, ML-powered financial activity insights.
 
 ---
 
@@ -56,20 +58,39 @@ url link:- https://finova-rust.vercel.app/
 - Create and manage savings circles.
 - Invite users through invitation codes.
 - Request-to-join and admin approval workflow.
+- Controlled membership management.
 
 ### 💳 Demo Payments
 - Simulated contribution payment flows.
 - Success, failed, and pending payment states.
 - Contribution records stored in the database.
+- One contribution per cycle.
 
 ### 🔗 Tamper-Evident Ledger
-- PostgreSQL-based hash-chained ledger design.
-- Record verification concept.
-- Designed for future blockchain anchoring.
+- PostgreSQL-based SHA-256 hash-chained ledger.
+- Append-only ledger rules.
+- Ledger checkpoint cross-verification.
+- In-app chain verification.
+- Ethereum verification interface for future deployed contract integration.
+
+### 🏦 Loans & Repayments
+- Loan request and management interface.
+- Two-admin approval workflow for large loans.
+- Optional interest configuration.
+- Overdue loan tracking.
+- Simulated repayment workflows.
+
+### 🤖 AI-Powered Insights
+- Advisory what-if analysis.
+- Synthetic-data-based ML service.
+- Financial activity insights.
+- Explainable risk indicators.
+- Not used for automated loan approval or creditworthiness decisions.
 
 ### 📊 Dashboard
 - Centralized application dashboard.
-- Navigation across available platform modules.
+- Navigation across platform modules.
+- Access to savings, loans, contributions, and ledger features.
 
 ---
 
@@ -82,9 +103,11 @@ url link:- https://finova-rust.vercel.app/
 | Backend | Supabase |
 | Database | PostgreSQL |
 | Authentication | Supabase Auth |
-| Ledger | SHA-256 hash chaining |
-| Smart Contracts | Solidity, Hardhat (planned integration) |
-| Machine Learning | Python (planned integration) |
+| Database Security | Row Level Security (RLS) |
+| Ledger | SHA-256 Hash Chaining |
+| Smart Contracts | Solidity, Hardhat |
+| Blockchain Network | Ethereum Sepolia (planned deployment) |
+| Machine Learning | Python |
 | Deployment | Vercel |
 
 ---
@@ -121,15 +144,23 @@ Create a Supabase project:
 
 https://supabase.com/
 
-Run the database migrations in the Supabase SQL Editor:
+Run the database migrations in the Supabase SQL Editor in the following order:
 
 ```text
 server/migrations/001_init.sql
 server/migrations/002_invites_payments_ledger.sql
 server/migrations/003_anchors_ml.sql
+server/migrations/004_loans.sql
+server/migrations/005_hardening_and_circle_rules.sql
+server/migrations/007_fix_gateway_cycle.sql
+server/migrations/006_schedule_anchoring.sql  (optional, run last)
 ```
 
-Run the migrations in order. Migration 003 is for the additional anchoring and ML schema.
+**Important:**
+- Run migrations in the specified order.
+- Migration 003 introduces additional anchoring and ML schema.
+- Migration 007 should be executed immediately after migration 005.
+- Migration 006 is optional and should be run last.
 
 ## 3. Configure Environment Variables
 
@@ -168,26 +199,31 @@ Open the local URL shown in your terminal.
 | Savings circles | Implemented |
 | Invitation workflow | Implemented |
 | Simulated payments | Implemented |
-| Database schema and RLS | Added; testing pending |
-| Hash-chained ledger backend | Schema and design added |
-| Ledger verification UI | Not yet completed |
-| Loans interface | Not yet implemented |
-| Contributions form | Not yet implemented |
-| Repayments | Not yet implemented |
-| ML service integration | Not yet implemented |
-| Blockchain anchoring | Not yet implemented |
-| Wallet connection | Not yet implemented |
-| Security testing | Pending |
+| Database schema and RLS | Implemented; 46 local database checks pass |
+| Hash-chained ledger backend | Implemented with checkpoint cross-check and append-only rules |
+| Ledger verification UI | Implemented |
+| Ethereum ledger verification | UI implemented; requires deployed contract |
+| Loans interface | Implemented |
+| Two-admin loan approval | Implemented for large loans |
+| Contributions | Implemented; one per cycle |
+| Repayments | Implemented (demo payments) |
+| ML service integration | Advisory what-if page implemented; requires ML service deployment |
+| Blockchain anchoring | Code complete; live deployment and verification pending |
+| Wallet connection | Read-only connection (address and network) |
+| Database security testing | 46 local checks passing |
+| Smart contract testing | 8 local tests passing |
+| Browser and Edge Function testing | Pending |
+| Penetration testing | Pending |
 
 **Development note:** The repository contains additional modules and infrastructure for future integration. Their presence does not mean those services are deployed or functional.
 
 ---
 
-# 🔗 Blockchain Integration — Future Scope
+# 🔗 Blockchain Integration
 
 Finova explores the possibility of anchoring ledger records to the Ethereum Sepolia testnet.
 
-Planned workflow:
+### Planned Workflow
 
 1. Develop and test a Solidity smart contract.
 2. Deploy the contract to Sepolia.
@@ -195,24 +231,32 @@ Planned workflow:
 4. Anchor the ledger's latest hash on-chain.
 5. Enable transaction verification.
 
-Only the ledger's head hash is intended to be anchored.
+Only the ledger's head hash is intended to be anchored, rather than storing complete financial records on the blockchain.
 
-**Current limitation:** Ledger records are not currently stored on Ethereum. The existing ledger design uses PostgreSQL hash chaining.
+### Current Implementation
+
+- PostgreSQL-based hash chaining implemented.
+- Ledger verification functionality implemented.
+- Smart contract code and local tests available.
+- Manual and scheduled checkpoint workflows implemented in code.
+
+**Current limitation:** Ledger records are not currently stored on Ethereum. Live blockchain anchoring requires a deployed contract, configured server secrets, and a funded wallet. It has not yet been verified on Sepolia.
 
 ---
 
-# 🤖 Machine Learning — Future Scope
+# 🤖 Machine Learning — Advisory Demo
 
-The project includes a planned Python-based ML service.
+The project includes a Python-based ML service (`ml-service/`) used by the AI insights page once deployed.
 
-Potential extensions:
+### Potential Applications
 
 - Anomaly detection.
 - Unusual contribution pattern analysis.
 - Financial activity insights.
 - Explainable risk indicators.
+- What-if scenario analysis.
 
-ML predictions are not currently integrated into the application and should not be treated as financial advice or creditworthiness decisions.
+The models use synthetic data only. Their outputs are advisory and must not be treated as financial advice, creditworthiness assessments, or automated loan decisions.
 
 ---
 
@@ -224,8 +268,20 @@ Security considerations in the project include:
 - Database Row Level Security (RLS).
 - Environment-based configuration.
 - Security headers.
-- Hash-chained record design.
+- SHA-256 hash-chained record design.
+- Append-only ledger rules.
+- Checkpoint cross-verification.
 - Separation of frontend and backend secrets.
+- Automated database security checks.
+- Smart contract testing.
+
+### Security Testing
+
+- 46 local database security checks passing.
+- 8 local smart contract tests passing.
+- Browser security testing pending.
+- Edge Function security testing pending.
+- Penetration testing pending.
 
 **Important:** Contributions and loans are platform records. Payments are simulated; the application does not transfer or pool real money.
 
@@ -239,12 +295,19 @@ Security considerations in the project include:
 - [x] Savings circle functionality
 - [x] Invitation and approval workflow
 - [x] Simulated payment workflow
-- [ ] Complete ledger interface and verification testing
-- [ ] Loans and repayment workflows
-- [ ] ML service integration
+- [x] Database schema and RLS implementation
+- [x] Hash-chained ledger backend
+- [x] Ledger interface and chain verification
+- [x] Loans and repayment workflows
+- [x] Two-admin approval for large loans
+- [x] Advisory ML insights interface
+- [x] Automated database security tests
+- [x] Smart contract development and local tests
+- [ ] ML service deployment and connection
 - [ ] Smart contract deployment to Sepolia
-- [ ] Secure backend blockchain anchoring
-- [ ] Automated security and RLS testing
+- [ ] Live blockchain anchoring verification
+- [ ] Browser and Edge Function security testing
+- [ ] Comprehensive penetration testing
 
 ---
 
