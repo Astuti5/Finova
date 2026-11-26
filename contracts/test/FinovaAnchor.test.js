@@ -1,11 +1,40 @@
 const { expect } = require("chai"); const { ethers } = require("hardhat");
 describe("FinovaAnchor", () => {
-  const key = ethers.id("circle-1"), h1 = ethers.id("r1"), h2 = ethers.id("r2");
-  async function setup() { const [owner, other] = await ethers.getSigners(); const c = await (await ethers.getContractFactory("FinovaAnchor")).deploy(); return { c, owner, other }; }
-  it("owner anchors and reads back", async () => { const { c } = await setup();
-    await expect(c.anchor(key, 1, h1)).to.emit(c, "Anchored").withArgs(key, 1, h1);
-    expect(await c.count(key)).to.equal(1n); expect((await c.latest(key)).recordHash).to.equal(h1); });
-  it("rejects a non-owner", async () => { const { c, other } = await setup(); await expect(c.connect(other).anchor(key, 1, h1)).to.be.revertedWithCustomError(c, "NotOwner"); });
-  it("rejects non-increasing seq", async () => { const { c } = await setup(); await c.anchor(key, 2, h1); await expect(c.anchor(key, 2, h2)).to.be.revertedWithCustomError(c, "SeqNotIncreasing"); });
-  it("transfers ownership in two steps", async () => { const { c, other } = await setup(); await c.transferOwnership(other.address); await c.connect(other).acceptOwnership(); expect(await c.owner()).to.equal(other.address); });
+  const key = ethers.id("circle-1"), h1 = ethers.id("r1"), h2 = ethers.id("r2"), h3 = ethers.id("r3");
+  async function setup() {
+    const [owner, anchorer, other] = await ethers.getSigners();
+    const c = await (await ethers.getContractFactory("FinovaAnchor")).deploy(anchorer.address);
+    return { c, owner, anchorer, other };
+  }
+  it("anchorer publishes and anyone reads back", async () => { const { c, anchorer, other } = await setup();
+    await expect(c.connect(anchorer).anchor(key, 1, h1)).to.emit(c, "Anchored").withArgs(key, 1, h1);
+    expect(await c.connect(other).count(key)).to.equal(1n);
+    expect((await c.latest(key)).recordHash).to.equal(h1);
+    const a = await c.anchorAt(key, 0); expect(a.seq).to.equal(1n); expect(a.recordHash).to.equal(h1); });
+  it("keeps every checkpoint readable by index", async () => { const { c, anchorer } = await setup();
+    await c.connect(anchorer).anchor(key, 1, h1); await c.connect(anchorer).anchor(key, 5, h2); await c.connect(anchorer).anchor(key, 9, h3);
+    expect(await c.count(key)).to.equal(3n);
+    expect((await c.anchorAt(key, 1)).recordHash).to.equal(h2);
+    await expect(c.anchorAt(key, 3)).to.be.revertedWithCustomError(c, "IndexOutOfRange"); });
+  it("rejects everyone who is not the anchorer, including the owner", async () => { const { c, owner, other } = await setup();
+    await expect(c.connect(other).anchor(key, 1, h1)).to.be.revertedWithCustomError(c, "NotAnchorer");
+    await expect(c.connect(owner).anchor(key, 1, h1)).to.be.revertedWithCustomError(c, "NotAnchorer"); });
+  it("rejects non-increasing seq and the zero hash", async () => { const { c, anchorer } = await setup();
+    await c.connect(anchorer).anchor(key, 2, h1);
+    await expect(c.connect(anchorer).anchor(key, 2, h2)).to.be.revertedWithCustomError(c, "SeqNotIncreasing");
+    await expect(c.connect(anchorer).anchor(key, 1, h2)).to.be.revertedWithCustomError(c, "SeqNotIncreasing");
+    await expect(c.connect(anchorer).anchor(ethers.id("other"), 1, ethers.ZeroHash)).to.be.revertedWithCustomError(c, "ZeroHash"); });
+  it("lets only the owner replace a leaked anchorer", async () => { const { c, owner, anchorer, other } = await setup();
+    await expect(c.connect(anchorer).setAnchorer(other.address)).to.be.revertedWithCustomError(c, "NotOwner");
+    await c.connect(owner).setAnchorer(other.address);
+    await expect(c.connect(anchorer).anchor(key, 1, h1)).to.be.revertedWithCustomError(c, "NotAnchorer");
+    await c.connect(other).anchor(key, 1, h1); });
+  it("old checkpoints survive a change of anchorer", async () => { const { c, owner, anchorer, other } = await setup();
+    await c.connect(anchorer).anchor(key, 1, h1); await c.connect(owner).setAnchorer(other.address);
+    expect((await c.latest(key)).recordHash).to.equal(h1); });
+  it("transfers ownership in two steps", async () => { const { c, other } = await setup();
+    await c.transferOwnership(other.address); expect(await c.owner()).to.not.equal(other.address);
+    await c.connect(other).acceptOwnership(); expect(await c.owner()).to.equal(other.address); });
+  it("refuses a zero anchorer", async () => { const F = await ethers.getContractFactory("FinovaAnchor");
+    await expect(F.deploy(ethers.ZeroAddress)).to.be.revertedWithCustomError(F, "ZeroAddress"); });
 });

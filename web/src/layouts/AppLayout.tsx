@@ -1,6 +1,6 @@
 import { NavLink, Outlet, Navigate } from "react-router-dom";
 import { LayoutDashboard, Users, Landmark, Bell, Search, LogOut, ShieldCheck, Brain } from "lucide-react";
-import { useAuth } from "../context/AuthContext"; import { supabase } from "../services/supabase";
+import GlobalSearch from "../components/GlobalSearch"; import { useAuth } from "../context/AuthContext"; import { supabase } from "../services/supabase";
 const nav = [["/", "Dashboard", LayoutDashboard], ["/circles", "Savings circles", Users], ["/loans", "Loans", Landmark], ["/ledger", "Ledger", ShieldCheck], ["/ai", "AI insights", Brain]] as const;
 export default function AppLayout() {
   const { session, loading } = useAuth();
@@ -14,8 +14,7 @@ export default function AppLayout() {
           <Icon size={18} aria-hidden />{label}</NavLink>)}</nav></aside>
     <div className="flex-1 min-w-0">
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <label className="relative flex-1 max-w-sm"><span className="sr-only">Search</span><Search size={16} className="absolute left-3 top-2.5 text-slate-500" aria-hidden />
-          <input className="input pl-9" placeholder="Search" /></label>
+        <GlobalSearch />
         <button aria-label="Notifications" className="p-2 rounded-lg hover:bg-surface"><Bell size={18} /></button>
         <span className="hidden sm:block text-xs text-slate-400">{session.user.email}</span>
         <button aria-label="Log out" onClick={() => supabase.auth.signOut()} className="p-2 rounded-lg hover:bg-surface"><LogOut size={18} /></button>
